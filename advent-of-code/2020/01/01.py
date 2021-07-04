@@ -1,3 +1,8 @@
+from itertools import combinations
+from functools import reduce
+from operator import mul
+
+
 def read_input(filename: str) -> list:
     with open(filename) as f:
         data = list(map(int, f.readlines()))
@@ -20,6 +25,10 @@ def find_indices3(data: list, sum_to: int) -> tuple:
                     return i, i + j + 1, i + j + k + 1
 
 
+def get_product(data: list, sum_to: int, n_terms: int):
+    return next(reduce(mul, c) for c in combinations(data, n_terms) if sum(c) == sum_to)
+
+
 if __name__ == "__main__":
     data = read_input("input.txt")
     i, j = find_indices(data, sum_to=2020)
@@ -27,3 +36,7 @@ if __name__ == "__main__":
 
     i, j, k = find_indices3(data, sum_to=2020)
     print(f"Product of three is {data[i]*data[j]*data[k]}")
+
+    print("Functional results:")
+    print(f"Product of two is {get_product(data, sum_to=2020, n_terms=2)}")
+    print(f"Product of three is {get_product(data, sum_to=2020, n_terms=3)}")
