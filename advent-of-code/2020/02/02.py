@@ -1,7 +1,7 @@
-from operator import eq, xor
+from operator import xor
 
 
-def read_input(filename: str) -> list:
+def read_input(filename: str) -> tuple:
     lows, highs, letters, passwords = [], [], [], []
     with open(filename) as f:
         for line in f:
