@@ -35,6 +35,7 @@ def iterfile(path: str):
 
 Command = NamedTuple('Command', [('direction', str), ('value', int)])
 Position = NamedTuple('Position', [('horizontal', int), ('depth', int)])
+State = NamedTuple('State', [('aim', int), ('position', Position)])  # for part 2
 
 
 def parse_data(raw_data: Iterable[str]) -> Iterable[Command]:
@@ -56,6 +57,21 @@ def update_position(position: Position, command: Command) -> Position:
     return new_position
 
 
+def update_state(state: State, command: Command) -> State:
+    name, value = command
+    aim, (horizontal, depth) = state
+    if name == 'forward':
+        new_state = State(aim=aim, position=Position(horizontal=horizontal + value, depth=depth + aim * value))
+    elif name == 'down':
+        new_state = State(aim=aim + value, position=Position(horizontal, depth))
+    elif name == 'up':
+        new_state = State(aim=aim - value, position=Position(horizontal, depth))
+    else:
+        raise ValueError(f'Unknown command {name=}.')
+
+    return new_state
+
+
 if __name__ == '__main__':
     # read everything in memory
     with open('input.txt') as f:
@@ -72,5 +88,16 @@ if __name__ == '__main__':
     # reduce part 1
     initial_position = Position(0, 0)
     final_position = reduce(update_position, commands, initial_position)
+    print(f'Answer to Part 1 using reduce and lazy iteration is '
+          f'{final_position.horizontal * final_position.depth}')
+
+    # lazy read
+    iterlines = iterfile('input.txt')
+    commands = parse_data(iterlines)
+
+    # reduce part2
+    initial_state = State(aim=0, position=Position(0, 0))
+    final_state = reduce(update_state, commands, initial_state)
+    final_position = final_state.position
     print(f'Answer to Part 1 using reduce and lazy iteration is '
           f'{final_position.horizontal * final_position.depth}')
