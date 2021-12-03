@@ -30,8 +30,7 @@ def iterfile(path: str):
     Utility function to lazily read lines of a file.
     """
     with open(path, 'r') as f:
-        for line in f:
-            yield line
+        yield from f
 
 
 Command = NamedTuple('Command', [('direction', str), ('value', int)])
