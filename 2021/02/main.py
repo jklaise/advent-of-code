@@ -99,5 +99,5 @@ if __name__ == '__main__':
     initial_state = State(aim=0, position=Position(0, 0))
     final_state = reduce(update_state, commands, initial_state)
     final_position = final_state.position
-    print(f'Answer to Part 1 using reduce and lazy iteration is '
+    print(f'Answer to Part 2 using reduce and lazy iteration is '
           f'{final_position.horizontal * final_position.depth}')
