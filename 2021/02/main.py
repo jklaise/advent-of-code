@@ -1,9 +1,16 @@
+from functools import reduce
+from operator import itemgetter
+from typing import Iterable, NamedTuple
+
 from toolz.dicttoolz import valmap
 from toolz.itertoolz import groupby
-from operator import itemgetter
 
 
-def part1(instructions: map) -> int:
+def part1(instructions: Iterable) -> int:
+    """
+    The order of instructions doesn't matter so we can
+    get away with using groupby.
+    """
     # group by key
     gb = groupby(lambda x: x[0], instructions)
 
@@ -18,9 +25,53 @@ def part1(instructions: map) -> int:
     return forward * depth
 
 
-if __name__ == '__main__':
-    with open('input.txt') as f:
-        instructions = map(str.split, f.readlines())
-        instructions = map(lambda x: (x[0], int(x[1])), instructions)  # convert str to int
+def iterfile(path: str):
+    """
+    Utility function to lazily read lines of a file.
+    """
+    with open(path, 'r') as f:
+        for line in f:
+            yield line
 
-    print(part1(instructions))
+
+Command = NamedTuple('Command', [('direction', str), ('value', int)])
+Position = NamedTuple('Position', [('horizontal', int), ('depth', int)])
+
+
+def parse_data(raw_data: Iterable[str]) -> Iterable[Command]:
+    return (Command(direction, int(value)) for direction, value in map(str.split, raw_data))
+
+
+def update_position(position: Position, command: Command) -> Position:
+    name, value = command
+    forward, depth = position
+    if name == 'forward':
+        new_position = Position(forward + value, depth)
+    elif name == 'down':
+        new_position = Position(forward, depth + value)
+    elif name == 'up':
+        new_position = Position(forward, depth - value)
+    else:
+        raise ValueError(f'Unknown command {name=}.')
+
+    return new_position
+
+
+if __name__ == '__main__':
+    # read everything in memory
+    with open('input.txt') as f:
+        commands = map(str.split, f.readlines())
+        commands = map(lambda x: (x[0], int(x[1])), commands)  # convert str to int
+
+    # groupby part 1
+    print(f'Answer to Part 1 using groubpy is {part1(commands)}')
+
+    # lazy read
+    iterlines = iterfile('input.txt')
+    commands = parse_data(iterlines)
+
+    # reduce part 1
+    initial_position = Position(0, 0)
+    final_position = reduce(update_position, commands, initial_position)
+    print(f'Answer to Part 1 using reduce and lazy iteration is '
+          f'{final_position.horizontal * final_position.depth}')
