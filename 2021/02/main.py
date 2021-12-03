@@ -1,12 +1,12 @@
 from functools import reduce
 from operator import itemgetter
-from typing import Iterable, NamedTuple
+from typing import Iterable, NamedTuple, Tuple
 
 from toolz.dicttoolz import valmap
 from toolz.itertoolz import groupby
 
 
-def part1(instructions: Iterable) -> int:
+def part1(instructions: Iterable[Tuple[str, int]]) -> int:
     """
     The order of instructions doesn't matter so we can
     get away with using groupby.
@@ -25,7 +25,7 @@ def part1(instructions: Iterable) -> int:
     return forward * depth
 
 
-def iterfile(path: str):
+def iterfile(path: str) -> Iterable[str]:
     """
     Utility function to lazily read lines of a file.
     """
@@ -75,11 +75,11 @@ def update_state(state: State, command: Command) -> State:
 if __name__ == '__main__':
     # read everything in memory
     with open('input.txt') as f:
-        commands = map(str.split, f.readlines())
-        commands = map(lambda x: (x[0], int(x[1])), commands)  # convert str to int
+        instructions = map(str.split, f.readlines())
+        instructions = map(lambda x: (x[0], int(x[1])), instructions)  # convert str to int
 
     # groupby part 1
-    print(f'Answer to Part 1 using groubpy is {part1(commands)}')
+    print(f'Answer to Part 1 using groubpy is {part1(instructions)}')
 
     # lazy read
     iterlines = iterfile('input.txt')
