@@ -74,6 +74,7 @@ def filter_data(component: Literal['O2', 'CO2'], data: Iterable[str]) -> str:
     else:
         raise ValueError(f'Unknown {component=}')
 
+    # TODO: what would a purely functional solution be like?
     n = 0
     peeked, data = peekn(2, data)
     while len(peeked) != 1:
@@ -81,7 +82,7 @@ def filter_data(component: Literal['O2', 'CO2'], data: Iterable[str]) -> str:
         peeked, data = peekn(2, data)
         n += 1
 
-    return list(data)[0]
+    return list(data)[0]  # ugly
 
 
 test_data = ['00100',
