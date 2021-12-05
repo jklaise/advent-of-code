@@ -3,7 +3,7 @@ from functools import reduce
 from itertools import tee
 from typing import Callable, Iterable, List, Literal
 
-from toolz.curried import get, peekn
+from toolz.curried import get, peek, peekn
 
 
 def iterfile(path: str) -> Iterable[str]:
@@ -100,12 +100,10 @@ test_data = ['00100',
 if __name__ == '__main__':
     # Part 1
 
-    # TODO: how to determine the length of the line without consuming
-    #  from the lazy generator? Answer: use toolz.peek
-    n_length = 12
-    counters = create_counters(12)
-
     iterlines = iterfile('input.txt')
+    first, iterlines = peek(iterlines)
+    counters = create_counters(len(first.strip()))  # .strip to remove \n
+
     final_counters = reduce(update_counts, iterlines, counters)
 
     gamma = get_gamma(final_counters)
