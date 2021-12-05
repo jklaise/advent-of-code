@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 from functools import reduce
-from typing import Iterable, List
+from itertools import tee
+from typing import Callable, Iterable, List, Literal
+
+from toolz.curried import get, peekn
 
 
 def iterfile(path: str) -> Iterable[str]:
@@ -52,6 +55,35 @@ def get_epsilon(counters: List[BitCounter]) -> str:
     return ''.join(map(BitCounter.least_common, counters))
 
 
+def count_bits(bits: Iterable[str]) -> BitCounter:
+    return reduce(update_count, bits, BitCounter(0, 0))
+
+
+def filter_nth(data: Iterable[str], n: int, method: Callable) -> Iterable[str]:
+    data_count, data_filter = tee(data)
+    bitcounter = count_bits(map(get(n), data_count))
+    bit = method(bitcounter)
+    return filter(lambda x: x[n] == bit, data_filter)  # (d for d in data if d[n] == bit)
+
+
+def filter_data(component: Literal['O2', 'CO2'], data: Iterable[str]) -> str:
+    if component == 'O2':
+        function = BitCounter.most_common
+    elif component == 'CO2':
+        function = BitCounter.least_common
+    else:
+        raise ValueError(f'Unknown {component=}')
+
+    n = 0
+    peeked, data = peekn(2, data)
+    while len(peeked) != 1:
+        data = filter_nth(data, n, function)
+        peeked, data = peekn(2, data)
+        n += 1
+
+    return list(data)[0]
+
+
 test_data = ['00100',
              '11110',
              '10110',
@@ -69,7 +101,7 @@ if __name__ == '__main__':
     # Part 1
 
     # TODO: how to determine the length of the line without consuming
-    #  from the lazy generator?
+    #  from the lazy generator? Answer: use toolz.peek
     n_length = 12
     counters = create_counters(12)
 
@@ -80,3 +112,12 @@ if __name__ == '__main__':
     epsilon = get_epsilon(final_counters)
 
     print(f'Gamma x Epsilon in decimal: {int(gamma, 2) * int(epsilon, 2)}')
+
+    # Part 2
+    iterlines = iterfile('input.txt')
+    iterlines_o2, iterlines_co2 = tee(iterlines)
+
+    o2_rating = filter_data(component='O2', data=iterlines_o2)
+    co2_rating = filter_data(component='CO2', data=iterlines_co2)
+
+    print(f'O2 x CO2 rating in decimal: {int(o2_rating, 2) * int(co2_rating, 2)}')
