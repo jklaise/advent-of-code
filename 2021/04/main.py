@@ -74,6 +74,23 @@ def find_winning_board(draws: List[int], boards: List[Board]) -> Tuple[int, int]
     return has_won, number
 
 
+def find_last_winning_board(draws: List[int], boards: List[Board]) -> Tuple[int, int]:
+    n_boards = len(boards)
+    n_won = 0
+    boards_won_index = []
+    while n_won != n_boards:
+        number = draws.pop(0)
+        boards = list(map(Board.mark(number=number), boards))
+        have_won = list(map(Board.has_won, boards))
+        indices = [i for i, hw in enumerate(have_won) if hw]
+        new_indices = list(set(indices) - set(boards_won_index))
+        boards_won_index.extend(new_indices)
+        n_won += len(new_indices)
+    last_won = boards_won_index[-1]
+
+    return last_won, number
+
+
 def calculate_score(board: Board, winning_number: int) -> int:
     # TODO: make functional
     summand = 0
@@ -81,7 +98,6 @@ def calculate_score(board: Board, winning_number: int) -> int:
         for number in row:
             if isinstance(number, int):
                 summand += number
-    print(summand, winning_number)
     return summand * winning_number
 
 
@@ -102,6 +118,13 @@ if __name__ == '__main__':
 
     # Part 1
     winning_board, winning_number = find_winning_board(draws, boards)
-    print(winning_board)
     score = calculate_score(boards[winning_board], winning_number)
     print(f'Score for Part 1 is {score}')
+
+    # Part 2
+    data = iterfile('input.txt')
+    draws, boards = parse_data(data)
+
+    last_winning_board, last_winning_number = find_last_winning_board(draws, boards)
+    score = calculate_score(boards[last_winning_board], last_winning_number)
+    print(f'Score for Part 2 is {score}')
