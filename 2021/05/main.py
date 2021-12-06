@@ -1,6 +1,6 @@
 from collections import Counter
 from dataclasses import dataclass
-from functools import reduce
+from functools import partial, reduce
 from itertools import chain
 from typing import List
 
@@ -12,7 +12,8 @@ test_data = ["0,9 -> 5,9",
              "6,4 -> 2,0",
              "0,9 -> 2,9",
              "3,4 -> 1,4",
-             "0,0 -> 8,8", ]
+             "0,0 -> 8,8",
+             "5,5 -> 8,2"]
 
 
 def read_lines(path: str) -> List[str]:
@@ -37,6 +38,9 @@ class Line:
 
     def is_vertical(self) -> bool:
         return self.start.x == self.end.x
+
+    def is_diagonal(self) -> bool:
+        return abs(self.start.x - self.end.x) == abs(self.start.y - self.end.y)
 
 
 def parse_lines(lines: List[str]) -> List[Line]:
@@ -65,21 +69,27 @@ def create_vent_map(lines: List[Line]) -> VentMap:
     return vent_map
 
 
-def update_vent_map(vent_map: VentMap, line: Line) -> VentMap:
+def update_vent_map(vent_map: VentMap, line: Line, diagonal: bool = False) -> VentMap:
     if line.is_horizontal():
         y = line.start.y
         xs = range(min(line.start.x, line.end.x), max(line.start.x, line.end.x) + 1)
         for x in xs:
             vent_map[y][x] += 1
-        return vent_map
     elif line.is_vertical():
         x = line.start.x
         ys = range(min(line.start.y, line.end.y), max(line.start.y, line.end.y) + 1)
         for y in ys:
             vent_map[y][x] += 1
-        return vent_map
+    elif line.is_diagonal() and diagonal:
+        x_pad = 1 if line.start.x < line.end.x else -1
+        y_pad = 1 if line.start.y < line.end.y else -1
+        xs = range(line.start.x, line.end.x + x_pad, x_pad)
+        ys = range(line.start.y, line.end.y + y_pad, y_pad)
+        for x, y in zip(xs, ys):
+            vent_map[y][x] += 1
     else:
-        raise ValueError(f'{line=} is neither horizontal nor vertical')
+        raise ValueError(f'{line=} is neither horizontal nor vertical, nor diagonal')
+    return vent_map
 
 
 def count_crossings(vent_map: VentMap, greater_than: int = 1) -> int:
@@ -99,3 +109,13 @@ if __name__ == '__main__':
     final_vent_map = reduce(update_vent_map, hor_and_ver_lines, vent_map)
     crossings = count_crossings(final_vent_map)
     print(f'Answer to part 1: {crossings}')
+
+    # Part 2
+    hor_ver_diag_lines = list(filter(lambda x: Line.is_horizontal(x)
+                                               or Line.is_vertical(x)
+                                               or Line.is_diagonal(x), lines))
+
+    vent_map = create_vent_map(lines)
+    final_vent_map = reduce(partial(update_vent_map, diagonal=True), hor_ver_diag_lines, vent_map)
+    crossings = count_crossings(vent_map)
+    print(f'Answer to part 2: {crossings}')
