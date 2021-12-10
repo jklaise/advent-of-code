@@ -1,5 +1,7 @@
-from functools import partial
-from itertools import product
+from copy import deepcopy
+from functools import partial, reduce
+from itertools import chain, product
+from operator import mul
 from typing import List, Tuple
 
 test_data = ["2199943210",
@@ -72,6 +74,53 @@ def part1(data: Map) -> int:
     return sum(risks)
 
 
+####### Part 2 functions
+def set_height_from_coords(value: int, coords: Coords, data: Map) -> Map:
+    new_data = deepcopy(data)  # eurgh
+    new_data[coords[0]][coords[1]] = value
+    return new_data
+
+
+def find_higher_neighbours(coords: Coords, data: Map) -> List[Coords]:
+    neighbours = get_neighbour_coords(coords)
+    return discard_peaks(neighbours, data)
+
+
+def find_basin(coords: Coords, data: Map, basin: List) -> List[Coords]:
+    # if we start, then add initial point to the basin (otherwise off by one)
+    if not basin:
+        basin = [coords]
+    data = set_height_from_coords(9, coords, data)  # not mutating...
+    neighbours = find_higher_neighbours(coords, data)
+    basin = basin + neighbours
+    if not neighbours:
+        return basin
+    else:
+        # Here we recurse, however we map the recursion across all neighbours.
+        # Since we map it, we need to use `chain` to extract the sublists and get a flattened list.
+        # Since we map it, we also need to remove duplicates (using set) - note memory consumption isn't good
+        return list(set(chain(*map(partial(find_basin, data=data, basin=basin), neighbours))))  # ewww
+
+
+def discard_peaks(coords: List[Coords], data: Map, padding: int = 100) -> List[Coords]:
+    "Don't consider points of height 9 and boundaries as part of a basin."
+    heights = list(map(partial(get_height_from_coords, data=data), coords))
+    return [coord for coord, height in zip(coords, heights) if height not in [9, padding]]
+
+
+def find_basins(data: Map) -> List[List[Coords]]:
+    low_points = find_low_points(data)
+    initial_basins = [[] for _ in low_points]
+    all_basins = [find_basin(lp, data, ib) for lp, ib in zip(low_points, initial_basins)]
+    return all_basins
+
+
+def part2(data: Map) -> int:
+    all_basins = find_basins(data)
+    top_three = sorted(all_basins, key=len, reverse=True)[:3]
+    return reduce(mul, map(len, top_three))
+
+
 if __name__ == '__main__':
     with open('input.txt') as f:
         data = f.read().splitlines()
@@ -80,3 +129,6 @@ if __name__ == '__main__':
     data = parse_data(data)
     data = pad_data(data)
     print(f'Answer to part 1 is {part1(data)}')
+
+    # Part 2
+    print(f'Answer to part 2 is {part2(data)}')
