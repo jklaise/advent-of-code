@@ -75,7 +75,7 @@ def part1(data: Map) -> int:
 
 
 ####### Part 2 functions
-def set_height_from_coords(value: int, coords: Coords, data: Map) -> Map:
+def update_data(value: int, coords: Coords, data: Map) -> Map:
     new_data = deepcopy(data)  # eurgh
     new_data[coords[0]][coords[1]] = value
     return new_data
@@ -86,20 +86,27 @@ def find_higher_neighbours(coords: Coords, data: Map) -> List[Coords]:
     return discard_peaks(neighbours, data)
 
 
-def find_basin(coords: Coords, data: Map, basin: List) -> List[Coords]:
+def find_basin(coord_queue: List[Coords], data: Map, basin: List) -> List[Coords]:
     # if we start, then add initial point to the basin (otherwise off by one)
     if not basin:
-        basin = [coords]
-    data = set_height_from_coords(9, coords, data)  # not mutating...
-    neighbours = find_higher_neighbours(coords, data)
+        basin = coord_queue
+    # TODO: what in the hell went wrong here
+    # data = set_height_from_coords(9, coords, data)  # not mutating...
+    # set_to_9 = partial(update_data, 9, coord_queue)
+    # data = list(map(partial(set_height_from_coords, 9, data), coord_queue))  # kwargs+partial and map not playing well
+    for coords in coord_queue:
+        data = update_data(value=9, coords=coords, data=data)
+    neighbours = list(set(chain(*map(partial(find_higher_neighbours, data=data), coord_queue))))
     basin = basin + neighbours
     if not neighbours:
         return basin
     else:
+        return find_basin(neighbours, data, basin)
+        # NOPE NOPE
         # Here we recurse, however we map the recursion across all neighbours.
         # Since we map it, we need to use `chain` to extract the sublists and get a flattened list.
         # Since we map it, we also need to remove duplicates (using set) - note memory consumption isn't good
-        return list(set(chain(*map(partial(find_basin, data=data, basin=basin), neighbours))))  # ewww
+        # return list(set(chain(*map(partial(find_basin, data=data, basin=basin), neighbours))))  # ewww
 
 
 def discard_peaks(coords: List[Coords], data: Map, padding: int = 100) -> List[Coords]:
@@ -111,7 +118,7 @@ def discard_peaks(coords: List[Coords], data: Map, padding: int = 100) -> List[C
 def find_basins(data: Map) -> List[List[Coords]]:
     low_points = find_low_points(data)
     initial_basins = [[] for _ in low_points]
-    all_basins = [find_basin(lp, data, ib) for lp, ib in zip(low_points, initial_basins)]
+    all_basins = [find_basin([lp], data, ib) for lp, ib in zip(low_points, initial_basins)]
     return all_basins
 
 
