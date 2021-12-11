@@ -1,7 +1,6 @@
 from collections import deque
 from enum import Enum
 from functools import reduce
-from operator import itemgetter
 from typing import List, Optional, Tuple
 
 
@@ -21,6 +20,13 @@ scores = {
     Char.RIGHT_SQUARE: 57,
     Char.RIGHT_BRACE: 1197,
     Char.RIGHT_ANGLE: 25137
+}
+
+completion_scores = {
+    Char.RIGHT_ROUND: 1,
+    Char.RIGHT_SQUARE: 2,
+    Char.RIGHT_BRACE: 3,
+    Char.RIGHT_ANGLE: 4
 }
 
 test_data = ["[({(<(())[]>[[{[]{<()<>>",
@@ -75,9 +81,8 @@ def update_stack(stack_and_illegals: Tuple[Stack, Line], char: Char) -> Tuple[St
     return stack, illegals
 
 
-def find_illegal_char(line: Line) -> Optional[Line]:
-    stack = Stack()
-    illegals = []
+def find_illegal_char(line: Line) -> Line:
+    stack, illegals = Stack(), []
     stack, illegals = reduce(update_stack, line, (stack, illegals))
     return illegals
 
@@ -94,6 +99,42 @@ def part1(data: List[Line]) -> int:
     return sum(map(scores.get, illegal_chars))
 
 
+#### Part 2 functions
+def filter_corrupt(data: List[Line]) -> List[Line]:
+    illegal_chars = find_illegal_chars(data)
+    return [line for ix, line in enumerate(data) if not illegal_chars[ix]]
+
+
+def get_completion(line: Line) -> List[Char]:
+    stack, illegals = Stack(), []
+    stack, _ = reduce(update_stack, line, (stack, illegals))
+    completions = []
+    while stack:
+        item = stack.pop()
+        _, name = item.name.split('_')
+        completion_name = 'RIGHT_' + name
+        completions.append(getattr(Char, completion_name))
+    return completions
+
+
+def score_completion(completion: List[Char]) -> int:
+    scores = map(completion_scores.get, completion)
+    return reduce(lambda accum, score: 5 * accum + score, scores, 0)
+
+
+def get_middle_score(scores: List[int]) -> int:
+    scores = sorted(scores)
+    n = len(scores)
+    return scores[int((n - 1) / 2)]
+
+
+def part2(data: List[Line]) -> int:
+    valid = filter_corrupt(data)
+    completions = map(get_completion, valid)
+    scores = map(score_completion, completions)
+    return get_middle_score(scores)
+
+
 if __name__ == "__main__":
     with open('input.txt') as f:
         data = f.read().splitlines()
@@ -102,3 +143,6 @@ if __name__ == "__main__":
 
     # Part 1
     print(f'The answer to part 1 is {part1(data)}')
+
+    # Part 2
+    print(f'The answer to part 2 is {part2(data)}')
