@@ -107,6 +107,17 @@ def step(board_and_flashes: Tuple[Board, int]) -> Tuple[Board, int]:
     return board, n_flashes + len(all_flashes)
 
 
+# TODO: how to make this functional?
+def run_until_synch(board: Board) -> int:
+    n_flashes = 0
+    n_all = len(get_all_coords(board))
+    n_steps = 0
+    while n_flashes != n_all:
+        board, n_flashes = step((board, 0))
+        n_steps += 1
+    return n_steps
+
+
 if __name__ == "__main__":
     with open('input.txt') as f:
         data = f.read().splitlines()
@@ -116,3 +127,7 @@ if __name__ == "__main__":
     board_and_flashes = (board, 0)
     board, n_flashes = repeated(step, 100)(board_and_flashes)
     print(f'Answer to part 1 is {n_flashes}')
+
+    # Part 2
+    board = pad_data(parse_data(data))
+    print(f'Answer to part 2 is {run_until_synch(board)}')
