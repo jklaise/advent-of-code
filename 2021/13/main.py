@@ -1,3 +1,4 @@
+from functools import reduce
 from operator import attrgetter
 from typing import NamedTuple, List, Literal, Tuple
 
@@ -58,6 +59,17 @@ def apply_instruction(dots: List[Dot], instruction: Instruction) -> List[Dot]:
     return fold_fun(dots, instruction.coord)
 
 
+def display_dots(dots: List[Dot]) -> None:
+    max_x = max(dots, key=attrgetter('x')).x
+    max_y = max(dots, key=attrgetter('y')).y
+    for y in range(0, max_y + 1):
+        print_line = ['.' for x in range(0, max_x + 1)]
+        line = list(filter(lambda dot: dot.y == y, dots))
+        for dot in line:
+            print_line[dot.x] = '#'
+        print(''.join(print_line))
+
+
 if __name__ == "__main__":
     with open('input.txt') as f:
         data = f.read().splitlines()
@@ -66,3 +78,7 @@ if __name__ == "__main__":
 
     # Part 1
     print(f'The answer to part 1 is {len(apply_instruction(dots, instructions[0]))}')
+
+    # Part 2
+    final_dots = reduce(apply_instruction, instructions, dots)
+    display_dots(final_dots)
