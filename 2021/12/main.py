@@ -1,12 +1,16 @@
+from collections import Counter
 from copy import deepcopy
 from itertools import chain
-from typing import List, NamedTuple, Tuple
+from time import time
+from typing import Callable, List, NamedTuple, Tuple
 
 
 class Edge(NamedTuple):
     node1: str
     node2: str
 
+
+Path = List[Edge]
 
 test_data = ["start-A",
              "start-b",
@@ -46,14 +50,25 @@ def prune_lower_case(edges: List[Edge], node: str) -> List[Edge]:
     return list(filter(lambda x: x.node1 != node and x.node2 != node, edges))
 
 
-def get_candidates(path: List[Edge], edges: List[Edge]) -> List[Edge]:
+def get_candidates_part1(path: Path, edges: List[Edge]) -> List[Edge]:
     lower_case_exclude = set([e.node1 for e in path if str.islower(e.node1)])
     filter_lower_case = lambda x: x.node1 not in lower_case_exclude and x.node2 not in lower_case_exclude
     filter_matching = lambda x: x.node1 == path[-1].node2
     return list(filter(lambda x: filter_lower_case(x) and filter_matching(x), edges))
 
 
-def get_new_paths(path: List[Edge], candidates: List[Edge]) -> List[List[Edge]]:
+def get_candidates_part2(path: Path, edges: List[Edge]) -> List[Edge]:
+    lower_case = Counter([e.node1 for e in path if str.islower(e.node1)])
+    filter_matching = lambda x: x.node1 == path[-1].node2
+    if lower_case.most_common()[0][1] <= 1:
+        return list(filter(lambda x: filter_matching(x), edges))
+    else:
+        lower_case_exclude = list(lower_case.keys())
+        filter_lower_case = lambda x: x.node1 not in lower_case_exclude and x.node2 not in lower_case_exclude
+        return list(filter(lambda x: filter_lower_case(x) and filter_matching(x), edges))
+
+
+def get_new_paths(path: Path, candidates: List[Edge]) -> List[Path]:
     if not candidates:
         return [path]
     new_paths = []
@@ -62,23 +77,37 @@ def get_new_paths(path: List[Edge], candidates: List[Edge]) -> List[List[Edge]]:
     return new_paths
 
 
+def prune_paths(paths: List[Path], new_paths: List[Path]) -> List[Path]:
+    "Remove paths that havent changed between two steps (excluding ending ones) as they are dead ends."
+    # NB: not useful as results in being the main bottleneck
+    ending_paths = list(filter(lambda path: path[-1].node2 == 'end', new_paths))
+    changed_paths = [path for path in new_paths if path not in paths and path[-1].node2 != 'end']
+    return ending_paths + changed_paths
+
+
 def find_paths(paths: List[List[Edge]],
                candidates: List[List[Edge]],
-               edges: List[Edge]) -> List[List[Edge]]:
+               edges: List[Edge],
+               candidate_selection: Callable) -> List[List[Edge]]:
     # handle starting with paths=[] and find starting edges
+    print(f'Paths: {len(paths)}, Candidates: {sum(len(c) for c in candidates)}')
     if not paths:
         start_edges = filter_start_edges(edges)
         paths = [[edge] for edge in start_edges]
-        candidates = [get_candidates(path, edges) for path in paths]
+        candidates = [candidate_selection(path, edges) for path in paths]
     else:
+        start = time()
         paths = list(chain(*[get_new_paths(path, candidate) for path, candidate in zip(paths, candidates)]))
-        candidates = [get_candidates(path, edges) for path in paths]
+        print(f'New paths: {time() - start}')
+        start = time()
+        candidates = [candidate_selection(path, edges) for path in paths]
+        print(f'New candidates: {time() - start}')
 
     # once we run out of candidates for all paths, return
     if not any(candidates):
         return paths
     else:
-        return find_paths(paths, candidates, edges)
+        return find_paths(paths, candidates, edges, candidate_selection)
 
 
 if __name__ == "__main__":
@@ -89,6 +118,11 @@ if __name__ == "__main__":
     edges = start_edges + mid_edges + end_edges
 
     # Part 1
-    paths = find_paths([], [], edges)
+    paths = find_paths([], [], edges, candidate_selection=get_candidates_part1)
     ending_paths = list(filter(lambda path: path[-1].node2 == 'end', paths))
-    print(f'Answer to Part 1 is {len(ending_paths)}')
+    print(f'Answer to Part 1 is {len(ending_paths)}\n')
+
+    # Part 2
+    paths = find_paths([], [], edges, candidate_selection=get_candidates_part2)
+    ending_paths = list(filter(lambda path: path[-1].node2 == 'end', paths))
+    print(f'Answer to Part 2 is {len(ending_paths)}')
