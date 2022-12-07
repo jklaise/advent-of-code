@@ -18,10 +18,6 @@ def is_dir(line: str) -> bool:
     return line.startswith('dir')
 
 
-def get_dir_name(line: str) -> str:
-    return line.split()[-1]
-
-
 def parse_file_ls(line: str) -> tuple[int, str]:
     split = line.split()
     return (int(split[0]), split[1])
