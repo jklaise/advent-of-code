@@ -1,6 +1,5 @@
 from copy import copy
 from dataclasses import dataclass
-from functools import reduce
 
 
 @dataclass
