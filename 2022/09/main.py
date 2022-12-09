@@ -126,22 +126,51 @@ def step_tail(head: Head, tail: Tail) -> Tail:
     if are_on_top(head, tail) or are_next_to(head, tail) or are_diagonal(head, tail):
         return tail
     elif are_same_row(head, tail):
-        assert abs(head.pos.y - tail.pos.y) == 2
+        # assert abs(head.pos.y - tail.pos.y) == 2
         if head.pos.y > tail.pos.y:
             tail = step_up(tail)
         else:
             tail = step_down(tail)
     elif are_same_col(head, tail):
-        assert abs(head.pos.x - tail.pos.x) == 2
+        # assert abs(head.pos.x - tail.pos.x) == 2
         if head.pos.x > tail.pos.x:
             tail = step_right(tail)
         else:
             tail = step_left(tail)
     else:  # diagonal step
-        assert taxicab_distance(head, tail) == 3
+        # assert taxicab_distance(head, tail) == 3
         tail = step_diag(head, tail)
     tail.history.append(copy(tail.pos))
     return tail
+
+
+# Part 2 functions
+@dataclass
+class Rope:
+    head: Head
+    tails: list[Tail]
+
+
+def initialize_rope(n_tails: int = 9) -> Rope:
+    start = (0, 0)
+    tails = [Tail(Position(*start), history=[Position(*start)]) for _ in range(n_tails)]
+    head = Head(Position(*start))
+    return Rope(head=head, tails=tails)
+
+
+def execute_motion_p2(motion: Motion, rope: Rope) -> Rope:
+    for step in range(motion.steps):
+        rope = execute_step_p2(motion.direction, rope)
+    return rope
+
+
+def execute_step_p2(direction: str, rope: Rope) -> Rope:
+    head = step_head(direction, rope.head)
+    prev_tail = head
+    for tail in rope.tails:
+        _ = step_tail(prev_tail, tail)
+        prev_tail = tail
+    return rope
 
 
 if __name__ == "__main__":
@@ -153,3 +182,9 @@ if __name__ == "__main__":
     for motion in motions:
         head, tail = execute_motion(motion, head, tail)
     print(len(set(tail.history)))
+
+    # Part 2
+    rope = initialize_rope()
+    for motion in motions:
+        rope = execute_motion_p2(motion, rope)
+    print(len(set(rope.tails[-1].history)))
