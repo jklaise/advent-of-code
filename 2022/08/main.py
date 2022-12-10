@@ -28,24 +28,6 @@ def are_visible(line: TreeLine) -> list[bool]:
     return visibility
 
 
-def scenic_score(line: TreeLine) -> list[int]:
-    """
-    Computes the scenic score in one direction, from left to right.
-    """
-    vis = are_visible(line)
-    score = [0 for _ in range(len(line))]
-    for i, height in enumerate(line):
-        if i == 0:
-            continue  # score 0 on edges
-        if vis[i]:
-            # visible from edge, so scenic score is equal to row positions
-            score[i] = i
-        else:
-            if vis[i - 1]:  # if the one immediately left is visible, score must be 1
-                score[i] = 1
-    return score
-
-
 def left_visible(line: TreeLine) -> list[bool]:
     return are_visible(line)
 
