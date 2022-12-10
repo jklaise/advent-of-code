@@ -1,3 +1,5 @@
+from functools import partial
+
 Grid = list[list[int]]
 TreeLine = list[int]
 Visibility = list[list[bool]]
@@ -26,6 +28,24 @@ def are_visible(line: TreeLine) -> list[bool]:
     return visibility
 
 
+def scenic_score(line: TreeLine) -> list[int]:
+    """
+    Computes the scenic score in one direction, from left to right.
+    """
+    vis = are_visible(line)
+    score = [0 for _ in range(len(line))]
+    for i, height in enumerate(line):
+        if i == 0:
+            continue  # score 0 on edges
+        if vis[i]:
+            # visible from edge, so scenic score is equal to row positions
+            score[i] = i
+        else:
+            if vis[i - 1]:  # if the one immediately left is visible, score must be 1
+                score[i] = 1
+    return score
+
+
 def left_visible(line: TreeLine) -> list[bool]:
     return are_visible(line)
 
@@ -36,6 +56,10 @@ def right_visible(line: TreeLine) -> list[bool]:
 
 def list_or(a: list[bool], b: list[bool]) -> list[bool]:
     return [x | y for x, y in zip(a, b)]
+
+
+def list_and(a: list[bool], b: list[bool]) -> list[bool]:
+    return [x & y for x, y in zip(a, b)]
 
 
 def row_visible(line: TreeLine) -> list[bool]:
@@ -59,6 +83,52 @@ def count_visible(vis: Visibility) -> int:
 
 
 # Part 2 functions
+def scenic_distance(line: TreeLine, index: int) -> int:
+    """
+    Calculate the scenic score (distance) of one tree in one direction only,
+    to the left.
+    """
+    if index == 0:
+        return 0
+
+    score = 0
+    height = line[index]
+    for ind in range(index - 1, -1, -1):
+        score += 1
+        if line[ind] >= height:
+            break
+    return score
+
+
+def view_left(line: TreeLine) -> list[int]:
+    f = partial(scenic_distance, line)
+    return list(map(f, range(len(line))))
+
+
+def view_right(line: TreeLine) -> list[int]:
+    f = partial(scenic_distance, line[::-1])
+    return list(map(f, range(len(line))))[::-1]
+
+
+def list_mul(a: list[int], b: list[int]) -> list[int]:
+    return [x * y for x, y in zip(a, b)]
+
+
+def row_scenic(line: TreeLine) -> list[int]:
+    sl = view_left(line)
+    sr = view_right(line)
+    return list_mul(sl, sr)
+
+
+def combine_scores(row_scores: list[list[int]], col_scores: list[list[int]]) -> list[list[int]]:
+    return list(map(list_mul, row_scores, col_scores))
+
+
+def get_scenic_scores(grid: Grid) -> list[list[int]]:
+    row_scores = list(map(row_scenic, grid))
+    col_scores = transpose(list(map(row_scenic, transpose(grid))))
+    return combine_scores(row_scores, col_scores)
+
 
 if __name__ == "__main__":
     with open("input.txt") as f:
@@ -69,3 +139,5 @@ if __name__ == "__main__":
     print(count_visible(vis))
 
     # Part 2
+    scenic_scores = get_scenic_scores(grid)
+    print(max(map(max, scenic_scores)))
